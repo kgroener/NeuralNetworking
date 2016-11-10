@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Simulation.NeuralNetworking.Networking
+namespace NeuralNetworking.Networking
 {
     public interface INeuralNetwork<T> where T : INeuralNetwork<T>
     {

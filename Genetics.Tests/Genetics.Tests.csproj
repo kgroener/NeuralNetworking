@@ -7,8 +7,8 @@
     <ProjectGuid>{3533CCCE-9589-4FF8-B1DE-817EC750C651}</ProjectGuid>
     <OutputType>AppContainerExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Genometry.Genetics.Tests</RootNamespace>
-    <AssemblyName>Genometry.Genetics.Tests</AssemblyName>
+    <RootNamespace>Genetics.Tests</RootNamespace>
+    <AssemblyName>Genetics.Tests</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion>10.0.14393.0</TargetPlatformVersion>

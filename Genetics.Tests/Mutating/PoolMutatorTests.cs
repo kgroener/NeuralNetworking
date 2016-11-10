@@ -1,10 +1,10 @@
-﻿using Simulation.Genetics.Mutating;
+﻿using Genetics.Mutating;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Simulation.Genetics.Tests.Mutating
+namespace Genetics.Tests.Mutating
 {
     internal class MutateableDummy
     {

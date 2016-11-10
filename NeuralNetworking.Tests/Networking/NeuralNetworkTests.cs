@@ -1,5 +1,5 @@
-﻿using Simulation.NeuralNetworking;
-using Simulation.NeuralNetworking.Networking;
+﻿using NeuralNetworking;
+using NeuralNetworking.Networking;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using System;
 using System.Diagnostics;

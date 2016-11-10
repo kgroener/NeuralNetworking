@@ -1,9 +1,9 @@
-﻿using Simulation.Genetics.Mutating;
+﻿using Genetics.Mutating;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace Simulation.Genetics.Enhancing
+namespace Genetics.Enhancing
 {
     public class FitnessResult
     {

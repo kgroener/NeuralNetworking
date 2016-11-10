@@ -1,4 +1,4 @@
-﻿namespace Simulation.NeuralNetworking
+﻿namespace NeuralNetworking
 {
     public enum ActivationFunction
     {

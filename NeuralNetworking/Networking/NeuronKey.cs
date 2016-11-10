@@ -1,4 +1,4 @@
-﻿namespace Simulation.NeuralNetworking.Networking
+﻿namespace NeuralNetworking.Networking
 {
     public class NeuronKey
     {

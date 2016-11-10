@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Simulation.Genetics.Enhancing
+namespace Genetics.Enhancing
 {
     public interface IGeneticEnhancer<T>
     {

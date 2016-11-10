@@ -7,8 +7,8 @@
     <ProjectGuid>{380C903F-BDA5-49A2-BEB2-31C49FF82583}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Genometry.NeuralNetworking</RootNamespace>
-    <AssemblyName>Genometry.NeuralNetworking</AssemblyName>
+    <RootNamespace>NeuralNetworking</RootNamespace>
+    <AssemblyName>NeuralNetworking</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion>10.0.14393.0</TargetPlatformVersion>

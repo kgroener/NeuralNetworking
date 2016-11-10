@@ -1,7 +1,7 @@
 ﻿using Extensions;
-using Simulation.Genetics.Mutating;
-using Simulation.NeuralNetworking;
-using Simulation.NeuralNetworking.Networking;
+using Genetics.Mutating;
+using NeuralNetworking;
+using NeuralNetworking.Networking;
 using System;
 using System.Collections.Generic;
 using System.Linq;

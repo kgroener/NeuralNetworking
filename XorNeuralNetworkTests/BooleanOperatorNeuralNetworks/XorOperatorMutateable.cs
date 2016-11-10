@@ -1,4 +1,4 @@
-﻿using Simulation.NeuralNetworking.Networking;
+﻿using NeuralNetworking.Networking;
 using System.Linq;
 
 namespace XorNeuralNetworkTests

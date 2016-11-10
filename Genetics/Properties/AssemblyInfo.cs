@@ -28,4 +28,4 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyFileVersion("1.0.0.0")]
 [assembly: ComVisible(false)]
 
-[assembly: InternalsVisibleTo("Simulation.Genetics.Tests")]
+[assembly: InternalsVisibleTo("Genetics.Tests")]

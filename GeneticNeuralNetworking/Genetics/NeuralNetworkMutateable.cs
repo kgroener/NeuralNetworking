@@ -1,4 +1,4 @@
-﻿using Simulation.NeuralNetworking.Networking;
+﻿using NeuralNetworking.Networking;
 using System.Threading.Tasks;
 
 namespace GeneticNeuralNetworking.Genetics
