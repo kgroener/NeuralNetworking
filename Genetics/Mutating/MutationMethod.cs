@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Genometry.Genetics.Mutating
+namespace Simulation.Genetics.Mutating
 {
     public delegate T MultiMutatorDelegate<T>(T[] args);
     public delegate T SingleMutatorDelegate<T>();

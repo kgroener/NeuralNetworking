@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 
-namespace Genometry.Game
+namespace Simulation.Game
 {
     public static class World
     {

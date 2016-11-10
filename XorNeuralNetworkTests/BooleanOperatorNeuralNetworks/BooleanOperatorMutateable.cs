@@ -1,5 +1,5 @@
 ﻿using GeneticNeuralNetworking.Genetics;
-using Genometry.NeuralNetworking.Networking;
+using Simulation.NeuralNetworking.Networking;
 using System;
 using System.Collections.Generic;
 using System.Linq;

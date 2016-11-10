@@ -17,7 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeuralNetworking.Tests", "N
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BooleanOperatorNeuralNetworkTests", "XorNeuralNetworkTests\BooleanOperatorNeuralNetworkTests.csproj", "{93D93976-D137-45C7-98A2-2AB9D77128D0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Genometry", "Genometry\Genometry.csproj", "{B99DF993-EA35-4601-9E95-FCE002D87BE1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Simulation", "Genometry\Simulation.csproj", "{B99DF993-EA35-4601-9E95-FCE002D87BE1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeneticNeuralNetworking", "GeneticNeuralNetworking\GeneticNeuralNetworking.csproj", "{A8A66ECD-8818-442B-89D5-A14B0AD9CD6B}"
 EndProject

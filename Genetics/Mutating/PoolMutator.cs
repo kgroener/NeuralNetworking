@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Genometry.Genetics.Mutating
+namespace Simulation.Genetics.Mutating
 {
     public abstract class PoolMutator<T>
     {

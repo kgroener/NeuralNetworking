@@ -1,4 +1,4 @@
-﻿using Genometry.NeuralNetworking.Networking;
+﻿using Simulation.NeuralNetworking.Networking;
 using System.Linq;
 
 namespace XorNeuralNetworkTests

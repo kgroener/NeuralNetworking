@@ -1,5 +1,5 @@
 ﻿using GeneticNeuralNetworking.Genetics;
-using Genometry.Genetics.Enhancing;
+using Simulation.Genetics.Enhancing;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using System;
 using System.Collections.Generic;

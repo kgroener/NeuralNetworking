@@ -1,5 +1,5 @@
-﻿using Genometry.NeuralNetworking;
-using Genometry.NeuralNetworking.Networking;
+﻿using Simulation.NeuralNetworking;
+using Simulation.NeuralNetworking.Networking;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using System;
 using System.Diagnostics;

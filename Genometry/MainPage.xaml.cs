@@ -1,5 +1,5 @@
-﻿using Genometry.Game;
-using Genometry.Game.Ship;
+﻿using Simulation.Game;
+using Simulation.Game.Ship;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -15,7 +15,7 @@ using WinRTXamlToolkit.Controls.DataVisualization.Charting;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
-namespace Genometry
+namespace Simulation
 {
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.

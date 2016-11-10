@@ -1,11 +1,11 @@
 ﻿using GeneticNeuralNetworking.Genetics;
-using Genometry.Genetics.Enhancing;
-using Genometry.NeuralNetworking.Networking;
+using Simulation.Genetics.Enhancing;
+using Simulation.NeuralNetworking.Networking;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Genometry.Game.Ship
+namespace Simulation.Game.Ship
 {
     public class ShipEnhancer : GeneticEnhancer<Ship>
     {

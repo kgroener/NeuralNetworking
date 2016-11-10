@@ -1,4 +1,4 @@
-﻿namespace Genometry.NeuralNetworking.Networking
+﻿namespace Simulation.NeuralNetworking.Networking
 {
     public class NeuronKey
     {

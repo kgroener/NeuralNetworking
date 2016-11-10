@@ -1,4 +1,4 @@
-﻿namespace Genometry.NeuralNetworking
+﻿namespace Simulation.NeuralNetworking
 {
     public enum ActivationFunction
     {

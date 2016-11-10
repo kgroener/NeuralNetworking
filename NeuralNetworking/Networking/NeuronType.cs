@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Genometry.NeuralNetworking.Networking
+namespace Simulation.NeuralNetworking.Networking
 {
     public enum NeuronType
     {

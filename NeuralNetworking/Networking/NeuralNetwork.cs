@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
-namespace Genometry.NeuralNetworking.Networking
+namespace Simulation.NeuralNetworking.Networking
 {
     public sealed class NeuralNetwork : INeuralNetwork<NeuralNetwork>
     {

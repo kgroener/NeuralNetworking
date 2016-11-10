@@ -7,8 +7,8 @@
     <ProjectGuid>{B99DF993-EA35-4601-9E95-FCE002D87BE1}</ProjectGuid>
     <OutputType>AppContainerExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Genometry</RootNamespace>
-    <AssemblyName>Genometry</AssemblyName>
+    <RootNamespace>Simulation</RootNamespace>
+    <AssemblyName>Simulation</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion>10.0.14393.0</TargetPlatformVersion>
