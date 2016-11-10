@@ -4,9 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NeuralNetworking
+namespace Genometry.NeuralNetworking.Networking
 {
-    public class Class1
+    public enum NeuronType
     {
+        Normal,
+        Input,
+        Output,
     }
 }
