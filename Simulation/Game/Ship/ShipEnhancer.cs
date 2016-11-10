@@ -1,7 +1,6 @@
 ﻿using GeneticNeuralNetworking.Genetics;
-using Simulation.Genetics.Enhancing;
-using Simulation.NeuralNetworking.Networking;
-using System;
+using Genetics.Enhancing;
+using NeuralNetworking.Networking;
 using System.Collections.Generic;
 using System.Linq;
 
