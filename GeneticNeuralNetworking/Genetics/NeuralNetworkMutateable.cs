@@ -1,5 +1,5 @@
 ﻿using NeuralNetworking.Networking;
-using System.Threading.Tasks;
+using System;
 
 namespace GeneticNeuralNetworking.Genetics
 {
@@ -13,6 +13,6 @@ namespace GeneticNeuralNetworking.Genetics
 
         public abstract T Clone();
 
-        public abstract Task RunAsync();
+        public abstract void Update(TimeSpan lastUpdateDuration);
     }
 }

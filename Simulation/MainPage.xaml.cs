@@ -3,7 +3,6 @@ using Simulation.Game.Ship;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
@@ -28,7 +27,6 @@ namespace Simulation
         public MainPage()
         {
             this.InitializeComponent();
-
             Task.Run(async () => await StartShipsAsync());
         }
 
@@ -49,18 +47,13 @@ namespace Simulation
 
             for (int i = 0; i < 1000000; i++)
             {
-                await ClearCanvasAsync();
-                await DrawTargetsAsync();
-
                 var champions = enhancer.GetTopSelection(generation, 10);
-                generation = enhancer.CreateNewGeneration(champions, 50);
+                generation = enhancer.CreateNewGeneration(champions, 100);
 
                 if (champions.Any())
                 {
                     await AddFitnessResultToChartAsync(enhancer, i, champions);
                 }
-
-                await DrawShipsAsync(generation);
 
                 await RunSimulationAsync(generation);
             }
@@ -77,91 +70,77 @@ namespace Simulation
             }).AsTask();
         }
 
-        private static async Task RunSimulationAsync(IEnumerable<Ship> generation)
+        private async Task RunSimulationAsync(IEnumerable<Ship> generation)
         {
-            List<Task> tasks = new List<Task>();
             foreach (var enhanceable in generation)
             {
-                tasks.Add(enhanceable.RunAsync());
+                enhanceable.Initialize();
             }
 
-            await Task.WhenAll(tasks);
+            int updateCount = 0;
+            DateTime start = DateTime.Now;
+            while (updateCount++ < 1000)
+            {
+                await Task.Delay(10);
+                
+                DateTime end = DateTime.Now;
+                var updateTime = end - start;
+                start = end;
+
+                Update(generation, updateTime);
+
+                await Draw(generation);
+            }
         }
 
-        private async Task ClearCanvasAsync()
+        private static void Update(IEnumerable<Ship> generation, TimeSpan updateTime)
         {
-            await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
-            Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            foreach (var enhanceable in generation)
             {
-                _canvas.Children.Clear();
-            });
+                enhanceable.Update(updateTime);
+            }
         }
 
-        private async Task DrawShipsAsync(IEnumerable<Ship> generation)
+        private async Task Draw(IEnumerable<Ship> generation)
         {
             await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
-            Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-            {
-                bool isFirst = true;
-                foreach (var ship in generation)
-                {
-                    var shipView = new Polygon();
-                    shipView.Points.Add(new Windows.Foundation.Point(-5, 0));
-                    shipView.Points.Add(new Windows.Foundation.Point(5, 0));
-                    shipView.Points.Add(new Windows.Foundation.Point(0, 5));
-                    shipView.Fill = isFirst ? new SolidColorBrush(Colors.Red) : new SolidColorBrush(Colors.Green);
+                            Windows.UI.Core.CoreDispatcherPriority.High, () =>
+                            {
+                                bool isFirst = true;
 
-                    isFirst = false;
+                                _canvas.Children.Clear();
 
-                    _canvas.Children.Add(shipView);
+                                foreach (var target in World.Targets)
+                                {
+                                    var targetView = new Ellipse()
+                                    {
+                                        Width = 10,
+                                        Height = 10,
+                                        Fill = new SolidColorBrush(Colors.Black)
+                                    };
 
-                    ship.Updated += async (o, e) =>
-                    {
-                        try
-                        {
-                            await UpdateShipPositionAsync(o, ship, shipView);
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine(ex.Message);
-                        }
-                    };
+                                    Canvas.SetLeft(targetView, target.X);
+                                    Canvas.SetTop(targetView, target.Y);
 
-                }
-            });
-        }
+                                    _canvas.Children.Add(targetView);
+                                }
 
-        private static async Task UpdateShipPositionAsync(object o, Ship ship, Polygon shipView)
-        {
-            await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
-            Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-            {
-                var s = o as Ship;
-                Canvas.SetLeft(shipView, ship.Position.X);
-                Canvas.SetTop(shipView, ship.Position.Y);
-            });
-        }
+                                foreach (var ship in generation)
+                                {
+                                    var shipView = new Polygon();
+                                    shipView.Points.Add(new Windows.Foundation.Point(-5, 0));
+                                    shipView.Points.Add(new Windows.Foundation.Point(5, 0));
+                                    shipView.Points.Add(new Windows.Foundation.Point(0, 5));
+                                    shipView.Fill = isFirst ? new SolidColorBrush(Colors.Red) : new SolidColorBrush(Colors.Green);
 
-        private async Task DrawTargetsAsync()
-        {
-            await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
-            Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-            {
-                foreach (var target in World.Targets)
-                {
-                    var targetView = new Ellipse()
-                    {
-                        Width = 10,
-                        Height = 10,
-                        Fill = new SolidColorBrush(Colors.Black)
-                    };
+                                    isFirst = false;
 
-                    Canvas.SetLeft(targetView, target.X);
-                    Canvas.SetTop(targetView, target.Y);
+                                    Canvas.SetLeft(shipView, ship.Position.X);
+                                    Canvas.SetTop(shipView, ship.Position.Y);
 
-                    _canvas.Children.Add(targetView);
-                }
-            });
+                                    _canvas.Children.Add(shipView);
+                                }
+                            });
         }
     }
 

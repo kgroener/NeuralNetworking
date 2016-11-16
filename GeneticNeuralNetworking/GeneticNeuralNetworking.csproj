@@ -114,10 +114,6 @@
     <EmbeddedResource Include="Properties\GeneticNeuralNetworking.rd.xml" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Extensions\Extensions.csproj">
-      <Project>{DAF817B8-BBDA-4406-85AE-532AC6BD0902}</Project>
-      <Name>Extensions</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Genetics\Genetics.csproj">
       <Project>{7F82FADA-44D2-4B39-AD5E-3718A3073293}</Project>
       <Name>Genetics</Name>

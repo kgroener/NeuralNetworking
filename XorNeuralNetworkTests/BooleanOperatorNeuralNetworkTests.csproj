@@ -126,20 +126,6 @@
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\GeneticNeuralNetworking\GeneticNeuralNetworking.csproj">
-      <Project>{a8a66ecd-8818-442b-89d5-a14b0ad9cd6b}</Project>
-      <Name>GeneticNeuralNetworking</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Genetics\Genetics.csproj">
-      <Project>{7f82fada-44d2-4b39-ad5e-3718a3073293}</Project>
-      <Name>Genetics</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NeuralNetworking\NeuralNetworking.csproj">
-      <Project>{380C903F-BDA5-49A2-BEB2-31C49FF82583}</Project>
-      <Name>NeuralNetworking</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">

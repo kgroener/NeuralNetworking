@@ -2,10 +2,8 @@
 using NeuralNetworking.Networking;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 
 namespace Simulation.Game.Ship
 {
@@ -15,11 +13,15 @@ namespace Simulation.Game.Ship
         private double _steering;
         private int _targetsReached;
         private float _distanceToTarget;
-        private static NeuralNetworkSettings _settings = new NeuralNetworkSettings(8, 2);
-        private TimeSpan _runDuration;
+        private static NeuralNetworkSettings _settings = new NeuralNetworkSettings(2, 2);
         private List<int> _targetTimestamps;
-
-        public event EventHandler Updated;
+        private double _directionAngle;
+        private NeuronKey _inputDistanceToTarget;
+        private NeuronKey _inputAngleDifference;
+        private NeuronKey _outputThrottle;
+        private NeuronKey _outputSteering;
+        private int _updates;
+        private int _targetIndex;
 
         public Ship() : this(new NeuralNetwork(_settings.NumberOfInputs, _settings.NumberOfOutputs))
         {
@@ -30,120 +32,100 @@ namespace Simulation.Game.Ship
 
         private Ship(NeuralNetwork network) : base(network)
         {
-            Position = new Vector2(0, 0);
-            Direction = new Vector2(0, 0);
+
+
+            Initialize();
         }
 
         public Vector2 Position { get; private set; }
-        public Vector2 Direction { get; private set; }
-        public Vector2 Target { get; private set; }
 
         public int TargetsReached => _targetsReached;
         public float DistanceToTarget => _distanceToTarget;
-        public TimeSpan RunDuration => _runDuration;
         public IEnumerable<int> TargetTimestamps => _targetTimestamps;
 
-        public override Task RunAsync()
+        public void Initialize()
         {
-            return Task.Run(async () =>
+            NeuralNetwork.ClearNeuronValues();
+
+            var inputNeurons = NeuralNetwork.GetNeurons(NeuronType.Input);
+            _inputDistanceToTarget = inputNeurons.ElementAt(0);
+            _inputAngleDifference = inputNeurons.ElementAt(1);
+
+            var outputNeurons = NeuralNetwork.GetNeurons(NeuronType.Output);
+            _outputThrottle = outputNeurons.ElementAt(0);
+            _outputSteering = outputNeurons.ElementAt(1);
+
+            Position = new Vector2(0, 0);
+            _speed = 0;
+            _steering = 0;
+            _directionAngle = 0d;
+            _targetTimestamps = new List<int>();
+
+            _targetIndex = 0;
+            _targetsReached = 0;
+            _targetTimestamps.Add(0);
+            _updates = 0;
+        }
+
+        public override void Update(TimeSpan lastUpdateDuration)
+        {
+            _updates++;
+            _distanceToTarget = (Position - World.Targets[_targetIndex]).Length();
+
+            if (_distanceToTarget < 50)
             {
-                NeuralNetwork.ClearNeuronValues();
-                Position = new Vector2(0, 0);
-                Direction = new Vector2(0, 0);
-                _speed = 0;
-                _steering = 0;
-                var directionAngle = 0d;
-                _targetTimestamps = new List<int>();
+                _targetIndex++;
+                _distanceToTarget = (Position - World.Targets[_targetIndex]).Length();
 
-                var inputNeurons = NeuralNetwork.GetNeurons(NeuronType.Input);
-                var inputPositionX = inputNeurons.ElementAt(0);
-                var inputPositionY = inputNeurons.ElementAt(1);
-                var inputDirectionX = inputNeurons.ElementAt(2);
-                var inputDirectionY = inputNeurons.ElementAt(3);
-                var inputDistanceToTarget = inputNeurons.ElementAt(4);
-                var inputAngleDifference = inputNeurons.ElementAt(5);
-                var inputTargetX = inputNeurons.ElementAt(6);
-                var inputTargetY = inputNeurons.ElementAt(7);
+                _targetsReached++;
+                _targetTimestamps.Add(_updates);
+            }
 
-                var outputNeurons = NeuralNetwork.GetNeurons(NeuronType.Output);
-                var outputThrottle = outputNeurons.ElementAt(0);
-                var outputSteering = outputNeurons.ElementAt(1);
+            if (_targetIndex > World.Targets.Count() - 1)
+            {
+                return;
+            }
 
-                _targetsReached = 0;
+            var target = World.Targets[_targetIndex];
 
-                _targetTimestamps.Add(0);
+            var angleToTarget = RadianToDegree(Math.Atan2(target.X - Position.X, target.Y - Position.Y));
 
-                int updates = 0;
-                foreach (var target in World.Targets)
-                {
-                    Target = target;
+            var angleDifference = angleToTarget - _directionAngle;
+            if (angleDifference > 180)
+            {
+                angleDifference -= 360;
+            }
+            else if (angleDifference < -180)
+            {
+                angleDifference += 360;
+            }
 
-                    NeuralNetwork.SetNeuronInput(inputTargetX, target.X);
-                    NeuralNetwork.SetNeuronInput(inputTargetY, target.Y);
+            NeuralNetwork.SetNeuronInput(_inputDistanceToTarget, Clip(_distanceToTarget / 100d, -10, 10));
+            NeuralNetwork.SetNeuronInput(_inputAngleDifference, angleDifference / 18d);
 
-                    _distanceToTarget = (Position - target).Length();
+            NeuralNetwork.UpdateNeuronValues();
 
-                    while (_distanceToTarget > 50)
-                    {
-                        var angleToTarget = RadianToDegree(Math.Atan2(Target.X - Position.X, Target.Y - Position.Y));
+            var throttle = Clip(NeuralNetwork.GetNeuronOutput(_outputThrottle), -10, 10);
+            _speed += throttle * 20;
+            _speed = Clip(_speed, -5000, 5000);
 
-                        var angleDifference = angleToTarget - directionAngle;
-                        if (angleDifference > 180)
-                        {
-                            angleDifference -= 360;
-                        }
-                        else if (angleDifference < -180)
-                        {
-                            angleDifference += 360;
-                        }
+            _steering = Clip(NeuralNetwork.GetNeuronOutput(_outputSteering), -10, 10);
 
-                        NeuralNetwork.SetNeuronInput(inputPositionX, Position.X);
-                        NeuralNetwork.SetNeuronInput(inputPositionY, Position.Y);
-                        NeuralNetwork.SetNeuronInput(inputDirectionX, Direction.X);
-                        NeuralNetwork.SetNeuronInput(inputDirectionY, Direction.X);
-                        NeuralNetwork.SetNeuronInput(inputDistanceToTarget, _distanceToTarget);
-                        NeuralNetwork.SetNeuronInput(inputAngleDifference, angleDifference);
+            _directionAngle += _steering;
+            _directionAngle %= 360;
+            if (_directionAngle < 0)
+            {
+                _directionAngle += 360;
+            }
 
-                        NeuralNetwork.UpdateNeuronValues();
+            double radians = DegreeToRadian(_directionAngle);
+            var direction = new Vector2(
+                (float)Math.Cos(radians),
+                -(float)Math.Sin(radians));
 
-                        var throttle = Clip(NeuralNetwork.GetNeuronOutput(outputThrottle), -200, 200);
-                        _speed += throttle;
-                        _speed = Clip(_speed, -5000, 5000);
+            Position += Vector2.Multiply(direction, (float)(_speed / 1000.0));
 
-                        _steering = Clip(NeuralNetwork.GetNeuronOutput(outputSteering), -100, 100);
-
-                        directionAngle += _steering / 10.0;
-                        directionAngle %= 360;
-                        if (directionAngle < 0)
-                        {
-                            directionAngle += 360;
-                        }
-
-                        double radians = DegreeToRadian(directionAngle);
-                        Direction = new Vector2(
-                            (float)Math.Cos(radians),
-                            -(float)Math.Sin(radians));
-
-                        Position += Vector2.Multiply(Direction, (float)(_speed / 1000.0));
-
-                        //Position = new Vector2((float)Clip(Position.X, -500, 1000), (float)Clip(Position.Y, -500, 1000));
-
-                        _distanceToTarget = (Position - target).Length();
-
-                        Updated?.Invoke(this, EventArgs.Empty);
-
-                        await Task.Delay(15);
-
-                        if (++updates >= 1000)
-                        {
-                            return;
-                        }
-                    }
-
-                    _targetsReached++;
-                    _targetTimestamps.Add(updates);
-                }
-            });
+            _distanceToTarget = (Position - target).Length();
         }
 
         private double DegreeToRadian(double angle)
