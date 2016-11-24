@@ -21,7 +21,7 @@ namespace Simulation.Game.Ship
                     (s) =>
                     {
                         // Get to as many targets as possible
-                        return new FitnessResult(s.TargetsReached*500);
+                        return new FitnessResult(s.TargetsReached*100);
                     },
                     (s) =>
                     {
@@ -49,7 +49,7 @@ namespace Simulation.Game.Ship
                     (s)=>
                     {
                         // Try to keep neuron count as low as possible
-                        return new FitnessResult(-s.NeuralNetwork.GetNeurons(NeuronType.Normal).Count()/10d);
+                        return new FitnessResult(-s.NeuralNetwork.GetAllNeurons().Count());
                     }
                 };
             }

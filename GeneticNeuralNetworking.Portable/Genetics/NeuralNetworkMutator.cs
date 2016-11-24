@@ -1,7 +1,7 @@
 ﻿using Extensions;
 using Genetics.Mutating;
-using NeuralNetworking;
 using NeuralNetworking.Networking;
+using NeuralNetworking.Networking.Neurons;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -59,23 +59,28 @@ namespace GeneticNeuralNetworking.Genetics
         {
             var newNetwork = new NeuralNetwork(_settings.NumberOfInputs, _settings.NumberOfOutputs);
 
-            var numberOfNeuronsToAdd = _random.Next(1, 20);
+            var numberOfNeuronsToAdd = _random.Next(1, 1 + (int)(20 * Aggressiveness));
 
             for (int i = 0; i < numberOfNeuronsToAdd; i++)
             {
-                newNetwork.AddNeuron(GetRandomActivationFunction());
+                newNetwork.AddHiddenNeuron(GetRandomActivationFunction());
+            }
+
+            for (int i = 0; i < GetRandomAddCount(); i++)
+            {
+                newNetwork.AddConstantNeuron(GetRandomConstant());
             }
 
             var fromNeurons = newNetwork.GetAllNeurons();
-            var toNeurons = fromNeurons.Except(newNetwork.GetNeurons(NeuronType.Input)).ToArray();
+            var toNeurons = fromNeurons.Where(n => !(n is ISupplierNeuron)).ToArray();
 
-            var numberOfSynapsesToAdd = _random.Next(20, 200);
+            var numberOfSynapsesToAdd = _random.Next(1 + (int)(20 * Aggressiveness), 1 + (int)(200 * Aggressiveness));
             for (int i = 0; i < numberOfSynapsesToAdd; i++)
             {
                 newNetwork.SetSynapseWeight(
                     fromNeurons.GetRandomElement(),
                     toNeurons.GetRandomElement(),
-                    (_random.NextDouble() - 0.5) * 4);
+                    GetRandomSynapseWeight());
             }
 
             var mutateableNetwork = new T();
@@ -83,21 +88,32 @@ namespace GeneticNeuralNetworking.Genetics
             return mutateableNetwork;
         }
 
+        private double GetRandomSynapseWeight()
+        {
+            return (_random.NextDouble() - 0.5) * 4 * (1 + Aggressiveness);
+        }
+
+        private double GetRandomConstant()
+        {
+            return (_random.NextDouble() - 0.5) * 10 * (1 + Aggressiveness);
+        }
+
+
         private T Mutate(T otherNetwork)
         {
             var clone = otherNetwork.Clone();
 
             var allNeurons = clone.NeuralNetwork.GetAllNeurons();
 
-            for (int i = 0; i < allNeurons.Count() / 10; i++)
+            for (int i = 0; i < allNeurons.Count() * ((1 + Aggressiveness) / 2); i++)
             {
                 allNeurons = clone.NeuralNetwork.GetAllNeurons();
-                var toNeurons = allNeurons.Except(clone.NeuralNetwork.GetNeurons(NeuronType.Input)).ToArray();
+                var toNeurons = allNeurons.OfType<ICalculateableNeuron>().ToArray();
 
                 var neuronFrom = allNeurons.GetRandomElement();
                 var neuronTo = toNeurons.GetRandomElement();
 
-                var option = _random.Next(0, 5);
+                var option = _random.Next(0, 6);
 
                 switch (option)
                 {
@@ -106,38 +122,54 @@ namespace GeneticNeuralNetworking.Genetics
                         clone.NeuralNetwork.SetSynapseWeight(neuronFrom, neuronTo, DoRandomMathematics(synapseWeight));
                         break;
                     case 1: // change activation function
-                        clone.NeuralNetwork.SetNeuronActivationFunction(neuronFrom, GetRandomActivationFunction());
+                        neuronTo.ChangeActivationFunction(GetRandomActivationFunction());
                         break;
                     case 2: // add neuron with synapses
-                        var neuronAdded = clone.NeuralNetwork.AddNeuron(GetRandomActivationFunction());
+                        {
+                            var neuronAdded = clone.NeuralNetwork.AddHiddenNeuron(GetRandomActivationFunction());
 
-                        var numberOfSynapsesToAdd = _random.Next(1, 3);
-                        for (int a = 0; a < numberOfSynapsesToAdd; a++)
-                        {
-                            clone.NeuralNetwork.SetSynapseWeight(
-                                neuronAdded,
-                                toNeurons.GetRandomElement(),
-                                (_random.NextDouble() - 0.5) * 4);
-                        }
-                        numberOfSynapsesToAdd = _random.Next(1, 3);
-                        for (int a = 0; a < numberOfSynapsesToAdd; a++)
-                        {
-                            clone.NeuralNetwork.SetSynapseWeight(
-                                allNeurons.GetRandomElement(),
-                                neuronAdded,
-                                (_random.NextDouble() - 0.5) * 4);
+                            var numberOfSynapsesToAdd = GetRandomAddCount();
+                            for (int a = 0; a < numberOfSynapsesToAdd; a++)
+                            {
+                                clone.NeuralNetwork.SetSynapseWeight(
+                                    neuronAdded,
+                                    toNeurons.GetRandomElement(),
+                                    GetRandomSynapseWeight());
+                            }
+                            numberOfSynapsesToAdd = GetRandomAddCount();
+                            for (int a = 0; a < numberOfSynapsesToAdd; a++)
+                            {
+                                clone.NeuralNetwork.SetSynapseWeight(
+                                    allNeurons.GetRandomElement(),
+                                    neuronAdded,
+                                    GetRandomSynapseWeight());
+                            }
                         }
                         break;
                     case 3: // remove neuron
-                        var neurons = clone.NeuralNetwork.GetNeurons(NeuronType.Normal);
-                        if (neurons.Any())
+                        var removableNeurons = allNeurons.Except(clone.NeuralNetwork.GetInputs()).Except(clone.NeuralNetwork.GetOutputs()).ToArray();
+                        if (removableNeurons.Any())
                         {
-                            var neuronToRemove = neurons.GetRandomElement();
+                            var neuronToRemove = removableNeurons.GetRandomElement();
                             clone.NeuralNetwork.RemoveNeuron(neuronToRemove);
                         }
                         break;
                     case 4: // remove synapse
                         clone.NeuralNetwork.SetSynapseWeight(neuronFrom, neuronTo, 0);
+                        break;
+                    case 5: // add a constant
+                        {
+                            var constantAdded = clone.NeuralNetwork.AddConstantNeuron(GetRandomConstant());
+
+                            var numberOfSynapsesToAdd = GetRandomAddCount();
+                            for (int a = 0; a < numberOfSynapsesToAdd; a++)
+                            {
+                                clone.NeuralNetwork.SetSynapseWeight(
+                                    constantAdded,
+                                    toNeurons.GetRandomElement(),
+                                    GetRandomSynapseWeight());
+                            }
+                        }
                         break;
                     default:
                         throw new NotImplementedException();
@@ -147,81 +179,89 @@ namespace GeneticNeuralNetworking.Genetics
             return clone;
         }
 
+        private int GetRandomAddCount()
+        {
+            return _random.Next(1, 1 + (int)(3 * Aggressiveness));
+        }
+
         private T CrossOver(T networkA, T networkB)
         {
-            var neuronsA = networkA.NeuralNetwork.GetNeurons(NeuronType.Normal);
-            var neuronsB = networkB.NeuralNetwork.GetNeurons(NeuronType.Normal);
+            var neuronsA = networkA.NeuralNetwork.GetInsideNeurons();
+            var neuronsB = networkB.NeuralNetwork.GetInsideNeurons();
 
             var ra = _random.Next(0, 1 + (neuronsA.Count() / 2));
-            var rb = _random.Next(0, 1 + (neuronsB.Count() / 2));
+            var rb = ((neuronsA.Count() + neuronsB.Count()) / 2) - ra;
 
             var newNetwork = new NeuralNetwork(_settings.NumberOfInputs, _settings.NumberOfOutputs);
-            var newInputs = newNetwork.GetNeurons(NeuronType.Input);
-            var newOutputs = newNetwork.GetNeurons(NeuronType.Output);
+            var newInputs = newNetwork.GetInputs();
+            var newOutputs = newNetwork.GetOutputs();
 
-            Dictionary<NeuronKey, NeuronKey> keyMappingA = new Dictionary<NeuronKey, NeuronKey>();
-            Dictionary<NeuronKey, NeuronKey> keyMappingB = new Dictionary<NeuronKey, NeuronKey>();
+
+            Dictionary<INeuron, INeuron> keyMappingA = new Dictionary<INeuron, INeuron>();
+            Dictionary<INeuron, INeuron> keyMappingB = new Dictionary<INeuron, INeuron>();
+
+            networkA.NeuralNetwork.GetInputs().MapAction(newNetwork.GetInputs(), (old, clone) =>
+            {
+                keyMappingA[clone] = old;
+            });
+            networkA.NeuralNetwork.GetOutputs().MapAction(newNetwork.GetOutputs(), (old, clone) =>
+            {
+                keyMappingA[clone] = old;
+            });
+
+            networkB.NeuralNetwork.GetInputs().MapAction(newNetwork.GetInputs(), (old, clone) =>
+            {
+                keyMappingB[clone] = old;
+            });
+            networkB.NeuralNetwork.GetOutputs().MapAction(newNetwork.GetOutputs(), (old, clone) =>
+            {
+                keyMappingB[clone] = old;
+            });
 
             foreach (var neuron in neuronsA.Take(ra))
             {
-                var neuronAdded = newNetwork.AddNeuron(networkA.NeuralNetwork.GetNeuronActivationFunction(neuron));
+                var neuronAdded = newNetwork.AddNeuronCopy(neuron);
                 keyMappingA[neuronAdded] = neuron;
             }
 
-            foreach (var neuron in neuronsB.Skip(rb))
+            foreach (var neuron in neuronsB.Reverse().Take(rb))
             {
-                var neuronAdded = newNetwork.AddNeuron(networkB.NeuralNetwork.GetNeuronActivationFunction(neuron));
+                var neuronAdded = newNetwork.AddNeuronCopy(neuron);
                 keyMappingB[neuronAdded] = neuron;
             }
 
             foreach (var neuron in newNetwork.GetAllNeurons())
             {
-                foreach (var mapping in keyMappingA)
+                if (keyMappingA.ContainsKey(neuron))
                 {
-                    if (newInputs.Contains(neuron))
+                    foreach (var mapping in keyMappingA)
                     {
-                        var weight = networkA.NeuralNetwork.GetSynapseWeight(neuron, mapping.Value);
-                        newNetwork.SetSynapseWeight(neuron, mapping.Key, weight);
-                    }
-                    else if (newOutputs.Contains(neuron))
-                    {
-                        var weight = networkA.NeuralNetwork.GetSynapseWeight(neuron, mapping.Value);
-                        newNetwork.SetSynapseWeight(neuron, mapping.Key, weight);
-
-                        weight = networkA.NeuralNetwork.GetSynapseWeight(mapping.Value, neuron);
-                        newNetwork.SetSynapseWeight(mapping.Key, neuron, weight);
-                    }
-                    else if (keyMappingA.ContainsKey(neuron))
-                    {
-                        var weight = networkA.NeuralNetwork.GetSynapseWeight(keyMappingA[neuron], mapping.Value);
-                        newNetwork.SetSynapseWeight(neuron, mapping.Key, weight);
-
-                        weight = networkA.NeuralNetwork.GetSynapseWeight(mapping.Value, keyMappingA[neuron]);
-                        newNetwork.SetSynapseWeight(mapping.Key, neuron, weight);
+                        if (!(mapping.Key is ISupplierNeuron))
+                        {
+                            var weight = networkA.NeuralNetwork.GetSynapseWeight(keyMappingA[neuron], mapping.Value);
+                            newNetwork.SetSynapseWeight(neuron, mapping.Key, weight);
+                        }
+                        if (!(neuron is ISupplierNeuron))
+                        {
+                            var weight = networkA.NeuralNetwork.GetSynapseWeight(mapping.Value, keyMappingA[neuron]);
+                            newNetwork.SetSynapseWeight(mapping.Key, neuron, weight);
+                        }
                     }
                 }
-                foreach (var mapping in keyMappingB)
+                else
                 {
-                    if (newInputs.Contains(neuron))
+                    foreach (var mapping in keyMappingB)
                     {
-                        var weight = networkB.NeuralNetwork.GetSynapseWeight(neuron, mapping.Value);
-                        newNetwork.SetSynapseWeight(neuron, mapping.Key, weight);
-                    }
-                    else if (newOutputs.Contains(neuron))
-                    {
-                        var weight = networkB.NeuralNetwork.GetSynapseWeight(neuron, mapping.Value);
-                        newNetwork.SetSynapseWeight(neuron, mapping.Key, weight);
-
-                        weight = networkB.NeuralNetwork.GetSynapseWeight(mapping.Value, neuron);
-                        newNetwork.SetSynapseWeight(mapping.Key, neuron, weight);
-                    }
-                    else if (keyMappingB.ContainsKey(neuron))
-                    {
-                        var weight = networkB.NeuralNetwork.GetSynapseWeight(keyMappingB[neuron], mapping.Value);
-                        newNetwork.SetSynapseWeight(neuron, mapping.Key, weight);
-
-                        weight = networkB.NeuralNetwork.GetSynapseWeight(mapping.Value, keyMappingB[neuron]);
-                        newNetwork.SetSynapseWeight(mapping.Key, neuron, weight);
+                        if (!(mapping.Key is ISupplierNeuron))
+                        {
+                            var weight = networkB.NeuralNetwork.GetSynapseWeight(keyMappingB[neuron], mapping.Value);
+                            newNetwork.SetSynapseWeight(neuron, mapping.Key, weight);
+                        }
+                        if (!(neuron is ISupplierNeuron))
+                        {
+                            var weight = networkB.NeuralNetwork.GetSynapseWeight(mapping.Value, keyMappingB[neuron]);
+                            newNetwork.SetSynapseWeight(mapping.Key, neuron, weight);
+                        }
                     }
                 }
             }
@@ -230,9 +270,9 @@ namespace GeneticNeuralNetworking.Genetics
             var allNeuronsA = keyMappingA.Keys;
             var allNeuronsB = keyMappingB.Keys;
 
-            if (allNeuronsA.Count > 0 && allNeuronsB.Count > 0)
+            if (allNeuronsA.Count() > 0 && allNeuronsB.Count() > 0)
             {
-                var numberOfSynapsesToAdd = _random.Next(0, allNeuronsA.Count + allNeuronsB.Count);
+                var numberOfSynapsesToAdd = _random.Next(0, allNeuronsA.Count() + allNeuronsB.Count());
 
                 for (int i = 0; i < numberOfSynapsesToAdd; i++)
                 {
@@ -240,15 +280,15 @@ namespace GeneticNeuralNetworking.Genetics
                     {
                         newNetwork.SetSynapseWeight(
                             allNeuronsA.GetRandomElement(),
-                            allNeuronsB.GetRandomElement(),
-                            (_random.NextDouble() - 0.5) * 4);
+                            allNeuronsB.Where(n => !(n is ISupplierNeuron)).GetRandomElement(),
+                            GetRandomSynapseWeight());
                     }
                     else
                     {
                         newNetwork.SetSynapseWeight(
                             allNeuronsB.GetRandomElement(),
-                            allNeuronsA.GetRandomElement(),
-                            (_random.NextDouble() - 0.5) * 4);
+                            allNeuronsA.Where(n => !(n is ISupplierNeuron)).GetRandomElement(),
+                            GetRandomSynapseWeight());
                     }
                 }
             }

@@ -9,16 +9,30 @@ namespace Genetics.Mutating
     {
         protected readonly Random _random;
         private Dictionary<MutationMethod<T>, double> _mutators;
+        private double _aggressiveness;
 
         public PoolMutator()
         {
             _random = new Random();
             _mutators = GetMutators();
+            Aggressiveness = 0.25;
         }
 
         internal int MutatorCount { get { return _mutators.Count; } }
 
         protected abstract Dictionary<MutationMethod<T>, double> GetMutators();
+
+        public double Aggressiveness
+        {
+            get
+            {
+                return _aggressiveness;
+            }
+            set
+            {
+                _aggressiveness = value > 1 ? 1 : value < 0 ? 0 : value;
+            }
+        }
 
         internal IEnumerable<T> MutatePool(IEnumerable<T> inputPool, int outputPoolSize)
         {

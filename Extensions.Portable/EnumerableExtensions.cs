@@ -29,5 +29,21 @@ namespace Extensions
             return input.ElementAt(index);
         }
 
+        public static void MapAction<T>(this IEnumerable<T> first, IEnumerable<T> second, Action<T, T> action)
+        {
+            if (first.Count() != second.Count())
+            {
+                throw new ArgumentException("First and second enumerable are not of equal length");
+            }
+
+            var enumerator = second.GetEnumerator();
+            foreach(var a in first)
+            {
+                enumerator.MoveNext();
+                var b = enumerator.Current;
+                action(a, b);
+            }
+        }
+
     }
 }

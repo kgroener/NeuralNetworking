@@ -5,13 +5,13 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Simulation.Desktop", "Simulation.Desktop\Simulation.Desktop.csproj", "{36CC577D-E6BA-4239-9877-5A3BCDDABA02}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeuralNetworking.Portable", "NeuralNetworking.Portable\NeuralNetworking.Portable.csproj", "{60A1AE55-1C93-4B20-975E-28ED793386F4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeuralNetworking", "NeuralNetworking.Portable\NeuralNetworking.csproj", "{60A1AE55-1C93-4B20-975E-28ED793386F4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Genetics.Portable", "Genetics.Portable\Genetics.Portable.csproj", "{619331F2-9FF7-443B-AE03-7D6B9F3E6BC3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Genetics", "Genetics.Portable\Genetics.csproj", "{619331F2-9FF7-443B-AE03-7D6B9F3E6BC3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeneticNeuralNetworking.Portable", "GeneticNeuralNetworking.Portable\GeneticNeuralNetworking.Portable.csproj", "{8196247A-8546-4613-B20A-08A3B30A5780}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeneticNeuralNetworking", "GeneticNeuralNetworking.Portable\GeneticNeuralNetworking.csproj", "{8196247A-8546-4613-B20A-08A3B30A5780}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Extensions.Portable", "Extensions.Portable\Extensions.Portable.csproj", "{A8C45682-84E3-46D7-91F1-F2EE7E99056B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Extensions", "Extensions.Portable\Extensions.csproj", "{A8C45682-84E3-46D7-91F1-F2EE7E99056B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

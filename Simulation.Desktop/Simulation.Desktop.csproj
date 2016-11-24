@@ -180,17 +180,21 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\GeneticNeuralNetworking.Portable\GeneticNeuralNetworking.Portable.csproj">
+    <ProjectReference Include="..\Extensions.Portable\Extensions.csproj">
+      <Project>{a8c45682-84e3-46d7-91f1-f2ee7e99056b}</Project>
+      <Name>Extensions</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\GeneticNeuralNetworking.Portable\GeneticNeuralNetworking.csproj">
       <Project>{8196247a-8546-4613-b20a-08a3b30a5780}</Project>
-      <Name>GeneticNeuralNetworking.Portable</Name>
+      <Name>GeneticNeuralNetworking</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Genetics.Portable\Genetics.Portable.csproj">
+    <ProjectReference Include="..\Genetics.Portable\Genetics.csproj">
       <Project>{619331f2-9ff7-443b-ae03-7d6b9f3e6bc3}</Project>
-      <Name>Genetics.Portable</Name>
+      <Name>Genetics</Name>
     </ProjectReference>
-    <ProjectReference Include="..\NeuralNetworking.Portable\NeuralNetworking.Portable.csproj">
+    <ProjectReference Include="..\NeuralNetworking.Portable\NeuralNetworking.csproj">
       <Project>{60a1ae55-1c93-4b20-975e-28ed793386f4}</Project>
-      <Name>NeuralNetworking.Portable</Name>
+      <Name>NeuralNetworking</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

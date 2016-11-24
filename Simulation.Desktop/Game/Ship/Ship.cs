@@ -1,5 +1,6 @@
 ﻿using GeneticNeuralNetworking.Genetics;
 using NeuralNetworking.Networking;
+using NeuralNetworking.Networking.Neurons;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,17 +10,21 @@ namespace Simulation.Game.Ship
 {
     public class Ship : NeuralNetworkMutateable<Ship>
     {
+        private static NeuralNetworkSettings _settings = new NeuralNetworkSettings(5, 2);
+
         private double _speed;
         private double _steering;
         private int _targetsReached;
         private float _distanceToTarget;
-        private static NeuralNetworkSettings _settings = new NeuralNetworkSettings(2, 2);
         private List<int> _targetTimestamps;
         private double _directionAngle;
-        private NeuronKey _inputDistanceToTarget;
-        private NeuronKey _inputAngleDifference;
-        private NeuronKey _outputThrottle;
-        private NeuronKey _outputSteering;
+        private IInputNeuron _inputDistanceToTarget;
+        private IInputNeuron _inputDistanceToNextTarget;
+        private IInputNeuron _inputAngleDifference;
+        private IInputNeuron _inputAngleDifferenceNextTarget;
+        private IInputNeuron _inputCurrentSteeringForce;
+        private IOutputNeuron _outputThrottle;
+        private IOutputNeuron _outputSteering;
         private int _updates;
         private int _targetIndex;
         private bool _targetDirectionForward;
@@ -46,13 +51,16 @@ namespace Simulation.Game.Ship
 
         public void Initialize()
         {
-            NeuralNetwork.ClearNeuronValues();
+            NeuralNetwork.Reset();
 
-            var inputNeurons = NeuralNetwork.GetNeurons(NeuronType.Input);
+            var inputNeurons = NeuralNetwork.GetInputs();
             _inputDistanceToTarget = inputNeurons.ElementAt(0);
             _inputAngleDifference = inputNeurons.ElementAt(1);
+            _inputDistanceToNextTarget = inputNeurons.ElementAt(2);
+            _inputAngleDifferenceNextTarget = inputNeurons.ElementAt(3);
+            _inputCurrentSteeringForce = inputNeurons.ElementAt(4);
 
-            var outputNeurons = NeuralNetwork.GetNeurons(NeuronType.Output);
+            var outputNeurons = NeuralNetwork.GetOutputs();
             _outputThrottle = outputNeurons.ElementAt(0);
             _outputSteering = outputNeurons.ElementAt(1);
 
@@ -67,6 +75,22 @@ namespace Simulation.Game.Ship
             _targetTimestamps.Add(0);
             _updates = 0;
             _targetDirectionForward = true;
+        }
+
+        private Vector2 GetNextTarget(int index)
+        {
+            if (_targetDirectionForward && index == World.Targets.Count() - 1)
+            {
+                return World.Targets[index - 1];
+            }
+            else if (!_targetDirectionForward && index == 0)
+            {
+                return World.Targets[1];
+            }
+            else
+            {
+                return World.Targets[index + (_targetDirectionForward ? 1 : -1)];
+            }
         }
 
         public override void Update(TimeSpan lastUpdateDuration)
@@ -91,8 +115,11 @@ namespace Simulation.Game.Ship
             }
 
             var target = World.Targets[_targetIndex];
-
             var angleToTarget = RadianToDegree(Math.Atan2(target.X - Position.X, target.Y - Position.Y));
+
+            var nextTarget = GetNextTarget(_targetIndex);
+            var angleToNextTarget = RadianToDegree(Math.Atan2(nextTarget.X - Position.X, nextTarget.Y - Position.Y));
+            var distanceToNextTarget = (Position - nextTarget).Length();
 
             var angleDifference = angleToTarget - _directionAngle;
             if (angleDifference > 180)
@@ -104,17 +131,31 @@ namespace Simulation.Game.Ship
                 angleDifference += 360;
             }
 
-            NeuralNetwork.SetNeuronInput(_inputDistanceToTarget, Clip(_distanceToTarget / 100d, -10, 10));
-            NeuralNetwork.SetNeuronInput(_inputAngleDifference, angleDifference / 18d);
+            var angleDifferenceToNextTarget = angleToNextTarget - _directionAngle;
+            if (angleDifferenceToNextTarget > 180)
+            {
+                angleDifferenceToNextTarget -= 360;
+            }
+            else if (angleDifferenceToNextTarget < -180)
+            {
+                angleDifferenceToNextTarget += 360;
+            }
+
+            _inputDistanceToTarget.SetInputValue(Clip(_distanceToTarget / 100d, -10, 10));
+            _inputDistanceToNextTarget.SetInputValue(Clip(distanceToNextTarget / 100d, -10, 10));
+            _inputAngleDifference.SetInputValue(angleDifference / 18d);
+            _inputAngleDifferenceNextTarget.SetInputValue(angleDifferenceToNextTarget / 18d);
+            _inputCurrentSteeringForce.SetInputValue(_steering);
 
             NeuralNetwork.UpdateNeuronValues();
 
-            var throttle = Clip(NeuralNetwork.GetNeuronOutput(_outputThrottle), -10, 10);
+            var throttle = _outputThrottle.GetOutputValue();
             _speed += throttle * 20;
-            _speed = Clip(_speed, -5000, 5000);
+            _speed = Clip(_speed, -100, 5000);
 
-            _steering = Clip(NeuralNetwork.GetNeuronOutput(_outputSteering), -10, 10);
+            var dSteering = _outputSteering.GetOutputValue();
 
+            _steering = Clip(_steering + (dSteering), -5, 5);
             _directionAngle += _steering;
             _directionAngle %= 360;
             if (_directionAngle < 0)

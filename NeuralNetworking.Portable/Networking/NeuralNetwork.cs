@@ -1,151 +1,152 @@
-﻿using System;
+﻿using Extensions;
+using NeuralNetworking.Networking.Neurons;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 
 namespace NeuralNetworking.Networking
 {
-    public sealed class NeuralNetwork : INeuralNetwork<NeuralNetwork>
+    public sealed class NeuralNetwork
     {
-        private Dictionary<ulong, Dictionary<ulong, double>> _synapseWeights;
-        private Dictionary<ulong, double> _neuronValues;
-        private Dictionary<NeuronType, HashSet<NeuronKey>> _neurons;
-        private Dictionary<ulong, ActivationFunction> _neuronActivationFunctions;
-        private NeuronKeyGenerator _neuronKeyGenerator;
+        private HashSet<INeuron> _neurons;
+        private readonly int _numberOfInputs;
+        private readonly int _numberOfOutputs;
+        private Dictionary<INeuron, Dictionary<INeuron, double>> _synapseWeights;
 
         public NeuralNetwork(int numberOfInputs, int numberOfOutputs)
         {
-            _synapseWeights = new Dictionary<ulong, Dictionary<ulong, double>>();
-            _neuronValues = new Dictionary<ulong, double>();
-            _neuronActivationFunctions = new Dictionary<ulong, ActivationFunction>();
-            _neurons = new Dictionary<NeuronType, HashSet<NeuronKey>>();
-            _neurons.Add(NeuronType.Normal, new HashSet<NeuronKey>());
-            _neurons.Add(NeuronType.Input, new HashSet<NeuronKey>());
-            _neurons.Add(NeuronType.Output, new HashSet<NeuronKey>());
-            _neuronKeyGenerator = new NeuronKeyGenerator();
+            _numberOfInputs = numberOfInputs;
+            _numberOfOutputs = numberOfOutputs;
+            _neurons = new HashSet<INeuron>();
+            _synapseWeights = new Dictionary<INeuron, Dictionary<INeuron, double>>();
 
-            for (int i = 0; i < numberOfInputs; ++i)
+            for (int i = 0; i < numberOfInputs; i++)
             {
-                AddNeuron(NeuronType.Input, ActivationFunction.Lineair);
+                _neurons.Add(new InputNeuron());
             }
-            for (int i = 0; i < numberOfOutputs; ++i)
+            for (int o = 0; o < numberOfOutputs; o++)
             {
-                AddNeuron(NeuronType.Output, ActivationFunction.Lineair);
+                _neurons.Add(new OutputNeuron());
             }
         }
 
-        public NeuronKey AddNeuron(ActivationFunction activationFunction)
+        public INeuron AddConstantNeuron(double constantValue)
         {
-            return AddNeuron(NeuronType.Normal, activationFunction);
+            var constantNeuron = new ConstantNeuron(constantValue);
+            _neurons.Add(constantNeuron);
+            return constantNeuron;
         }
 
-        private NeuronKey AddNeuron(NeuronType neuronType, ActivationFunction activationFunction)
+        public INeuron AddHiddenNeuron(ActivationFunction activationFunction)
         {
-            NeuronKey newKey = _neuronKeyGenerator.Create();
-
-            _neuronValues[newKey.Key] = 0;
-            _synapseWeights.Add(newKey.Key, new Dictionary<ulong, double>());
-            _neuronActivationFunctions[newKey.Key] = activationFunction;
-            _neurons[neuronType].Add(newKey);
-
-            return newKey;
+            var hiddenNeuron = new HiddenNeuron(activationFunction);
+            _neurons.Add(hiddenNeuron);
+            return hiddenNeuron;
         }
 
-        public void ClearNeuronValues()
+        public INeuron AddNeuronCopy(INeuron neuronToClone)
         {
-            foreach(var key in _neuronValues.Keys.ToArray())
+            HiddenNeuron hn = neuronToClone as HiddenNeuron;
+            if (hn != null)
             {
-                _neuronValues[key] = 0;
+                return AddHiddenNeuron(hn.ActivationFunction);
+            }
+
+            ConstantNeuron cn = neuronToClone as ConstantNeuron;
+            if (cn != null)
+            {
+                return AddConstantNeuron(cn.Value);
+            }
+
+            throw new ArgumentException("Neuron to clone is not a valid neuron type to clone");
+        }
+
+        public void RemoveNeuron(INeuron neuron)
+        {
+            if (!_neurons.Remove(neuron))
+            {
+                throw new ArgumentException($"Neuron did not exist in this neural network, and thus could not be removed");
+            }
+
+            _synapseWeights.Remove(neuron);
+            foreach (var connection in _synapseWeights)
+            {
+                connection.Value.Remove(neuron);
             }
         }
 
-        public void RemoveNeuron(NeuronKey neuron)
+        public IEnumerable<INeuron> GetAllNeurons()
         {
-            if (!_neurons[NeuronType.Normal].Any(n => n.Key == neuron.Key))
-            {
-                throw new ArgumentException("Neuron is not removeable (Input/Output) or is not found");
-            }
-            _neurons[NeuronType.Normal].Remove(neuron);
-            _neuronValues.Remove(neuron.Key);
-            foreach (var synapse in _synapseWeights)
-            {
-                synapse.Value.Remove(neuron.Key);
-            }
-            _synapseWeights.Remove(neuron.Key);
+            return _neurons.ToArray();
         }
 
-        public void SetNeuronInput(NeuronKey inputNeuron, double value)
+        public IEnumerable<IInputNeuron> GetInputs()
         {
-            if (!_neurons[NeuronType.Input].Contains(inputNeuron))
+            return _neurons.OfType<IInputNeuron>().ToArray();
+        }
+
+        public IEnumerable<IOutputNeuron> GetOutputs()
+        {
+            return _neurons.OfType<IOutputNeuron>().ToArray();
+        }
+
+        public IEnumerable<INeuron> GetInsideNeurons()
+        {
+            return _neurons.Where(n => !(n is IInputNeuron) && !(n is IOutputNeuron)).ToArray();
+        }
+
+        public double GetSynapseWeight(INeuron from, INeuron to)
+        {
+            if (!_neurons.Contains(from))
             {
-                throw new ArgumentException("Supplied neuron key is not an input neuron");
+                throw new ArgumentException("Neuron 'from' is not a neuron from this neural network");
             }
-
-            _neuronValues[inputNeuron.Key] = value;
-        }
-
-        public void SetNeuronInput(NeuronKey inputNeuron, bool value)
-        {
-            SetNeuronInput(inputNeuron, value ? 1 : 0);
-        }
-
-        public double GetNeuronOutput(NeuronKey outputNeuron)
-        {
-            if (!_neurons[NeuronType.Output].Contains(outputNeuron))
+            if (!_neurons.Contains(to))
             {
-                throw new ArgumentException("Supplied neuron key is not an output neuron");
+                throw new ArgumentException("Neuron 'to' is not a neuron from this neural network");
             }
 
-            return _neuronValues[outputNeuron.Key];
-        }
-
-        public void SetNeuronActivationFunction(NeuronKey neuron, ActivationFunction activationFunction)
-        {
-            _neuronActivationFunctions[neuron.Key] = activationFunction;
-        }
-
-        public ActivationFunction GetNeuronActivationFunction(NeuronKey neuron)
-        {
-            return _neuronActivationFunctions[neuron.Key];
-        }
-
-        public void SetSynapseWeight(NeuronKey from, NeuronKey to, double weight)
-        {
-            //Inputs cannot have synapses going towards them.
-            if (_neurons[NeuronType.Input].Contains(to))
+            double weight = 0;
+            if (_synapseWeights.ContainsKey(from) && _synapseWeights[from].ContainsKey(to))
             {
-                throw new InvalidOperationException("NeuronKey to cannot be an input neuron");
+                weight = _synapseWeights[from][to];
             }
 
-            if (weight == 0 || double.IsNaN(weight))
+            return weight;
+        }
+        public void SetSynapseWeight(INeuron from, INeuron to, double weight)
+        {
+            if (!_neurons.Contains(from))
             {
-                _synapseWeights[from.Key].Remove(to.Key);
+                throw new ArgumentException("Neuron 'from' is not a neuron from this neural network");
+            }
+            if (!_neurons.Contains(to))
+            {
+                throw new ArgumentException("Neuron 'to' is not a neuron from this neural network");
+            }
+            if (double.IsNaN(weight))
+            {
+                throw new ArgumentException("Weight is not a number (NaN)");
+            }
+            if (to is ISupplierNeuron)
+            {
+                throw new ArgumentException("Neuron 'to' is a supplier neuron, cannot create a synapse to this type of neuron");
+            }
+
+            if (!_synapseWeights.ContainsKey(from))
+            {
+                _synapseWeights[from] = new Dictionary<INeuron, double>();
+            }
+
+            if (weight == 0)
+            {
+                _synapseWeights[from].Remove(to);
             }
             else
             {
-                _synapseWeights[from.Key][to.Key] = weight;
+                _synapseWeights[from][to] = weight;
             }
-        }
-
-        public double GetSynapseWeight(NeuronKey from, NeuronKey to)
-        {
-            if (_synapseWeights[from.Key].ContainsKey(to.Key))
-            {
-                return _synapseWeights[from.Key][to.Key];
-            }
-
-            return 0;
-        }
-
-        public IEnumerable<NeuronKey> GetNeurons(NeuronType neuronType)
-        {
-            return _neurons[neuronType];
-        }
-
-        public IEnumerable<NeuronKey> GetAllNeurons()
-        {
-            return _neurons.SelectMany(v => v.Value);
         }
 
         public TimeSpan UpdateNeuronValues(int cycles = 1)
@@ -155,16 +156,10 @@ namespace NeuralNetworking.Networking
 
             for (int i = 0; i < cycles; i++)
             {
-                var currentNeuronValues = new Dictionary<ulong, double>(_neuronValues);
-                var accumulativeNewNeuronValues = new Dictionary<ulong, double>(_neuronValues);
+                var currentNeuronValues = _neurons.ToDictionary((n) => n, (n) => n.Value);
+                var accumulativeNewNeuronValues = _neurons.ToDictionary((n) => n, (n) => 0d);
 
-                //clear new neuron values
-                foreach (var key in accumulativeNewNeuronValues.Keys.ToArray())
-                {
-                    accumulativeNewNeuronValues[key] = 0;
-                }
-
-                //calculate new values from old ones
+                //calculate accumulative values from synapses
                 foreach (var synapseBegin in _synapseWeights)
                 {
                     var neuronFrom = synapseBegin.Key;
@@ -178,10 +173,9 @@ namespace NeuralNetworking.Networking
                     }
                 }
 
-                //store new values using synapse function
-                foreach (var kv in accumulativeNewNeuronValues)
+                foreach (var cn in _neurons.OfType<ICalculateableNeuron>())
                 {
-                    _neuronValues[kv.Key] = CalculateActivationFunction(kv.Key, kv.Value);
+                    cn.CalculateValue(accumulativeNewNeuronValues[cn]);
                 }
             }
 
@@ -189,105 +183,67 @@ namespace NeuralNetworking.Networking
             return sw.Elapsed;
         }
 
-        private double CalculateActivationFunction(ulong neuronKey, double accumulativeValue)
-        {
-            switch (_neuronActivationFunctions[neuronKey])
-            {
-                case ActivationFunction.Lineair:
-                    return accumulativeValue;
-                case ActivationFunction.LineairTruncated:
-                    return (accumulativeValue >= 1) ? 1 : (accumulativeValue <= -1) ? -1 : accumulativeValue;
-                case ActivationFunction.LineairTruncatedAtZero:
-                    return (accumulativeValue >= 1) ? 1 : (accumulativeValue <= 0) ? 0 : accumulativeValue;
-                case ActivationFunction.Binairy:
-                    return (accumulativeValue >= 0.5) ? 1 : 0;
-                case ActivationFunction.PositiveNegativeBinairy:
-                    return (accumulativeValue >= 0) ? 1 : -1;
-                case ActivationFunction.Sigmoid:
-                    return (1 / (1 + Math.Exp(-accumulativeValue)));
-                case ActivationFunction.HyperbolicTangent:
-                    return Math.Tanh(accumulativeValue);
-                default:
-                    throw new NotImplementedException($"Synapse function {_neuronActivationFunctions[neuronKey]} is not implemented.");
-            }
-        }
-
         public NeuralNetwork Clone()
         {
-            var networkClone = new NeuralNetwork(_neurons[NeuronType.Input].Count, _neurons[NeuronType.Output].Count);
+            //Create clone with same amount of inputs and outputs
+            var networkClone = new NeuralNetwork(_numberOfInputs, _numberOfOutputs);
 
-            var normalNeurons = _neurons[NeuronType.Normal];
-            for (int i = 0; i < normalNeurons.Count; i++)
+            //Create mapping for current neurons and cloned neurons 
+            Dictionary<INeuron, INeuron> neuronMapping = new Dictionary<INeuron, INeuron>();
+            GetInputs().MapAction(networkClone.GetInputs(), (a, b) =>
             {
-                networkClone.AddNeuron(ActivationFunction.Lineair);
+                neuronMapping[a] = b;
+            });
+
+            GetOutputs().MapAction(networkClone.GetOutputs(), (a, b) =>
+            {
+                neuronMapping[a] = b;
+            });
+
+            // clone hidden and constant neurons
+            var hiddenNeurons = _neurons.OfType<HiddenNeuron>();
+            foreach (var hiddenNeuron in hiddenNeurons)
+            {
+                neuronMapping[hiddenNeuron] = networkClone.AddHiddenNeuron(hiddenNeuron.ActivationFunction);
             }
 
-            var currentNeurons = GetAllNeurons();
-            var cloneNeurons = networkClone.GetAllNeurons();
+            var constantNeurons = _neurons.OfType<ConstantNeuron>();
+            foreach (var constantNeuron in constantNeurons)
+            {
+                neuronMapping[constantNeuron] = networkClone.AddConstantNeuron(constantNeuron.Value);
+            }
 
+
+            var currentNeurons = GetAllNeurons();
+#if DEBUG
+            var cloneNeurons = networkClone.GetAllNeurons();
             if (currentNeurons.Count() != cloneNeurons.Count())
             {
                 throw new InvalidOperationException("Clone failed");
             }
+#endif
 
-            currentNeurons.Zip(cloneNeurons, (original, clone) =>
+            //Clone synapses
+            foreach (var neuronFrom in currentNeurons)
             {
-                var activationFunction = GetNeuronActivationFunction(original);
-                networkClone.SetNeuronActivationFunction(clone, activationFunction);
-
-                return currentNeurons.Zip(cloneNeurons, (original2, clone2) =>
+                foreach (var neuronTo in currentNeurons)
                 {
-                    if (_neurons[NeuronType.Input].Contains(original2))
+                    if (!(neuronTo is ISupplierNeuron))
                     {
-                        return 0;
+                        networkClone.SetSynapseWeight(neuronMapping[neuronFrom], neuronMapping[neuronTo], GetSynapseWeight(neuronFrom, neuronTo));
                     }
-
-                    var weight = GetSynapseWeight(original, original2);
-                    networkClone.SetSynapseWeight(clone, clone2, weight);
-
-                    return weight;
-                }).ToArray(); // Make sure it is executed
-            }).ToArray(); // Make sure it is executed
+                }
+            }
 
             return networkClone;
         }
 
-
-        public override string ToString()
+        public void Reset()
         {
-            var allNeurons = GetAllNeurons();
-
-            StringBuilder builder = new StringBuilder();
-
-            builder.Append($"XXXX|");
-
-            foreach (var neuron in allNeurons)
+            foreach (var neuron in _neurons)
             {
-                builder.Append($"{neuron.Key:0000}|");
+                neuron.Reset();
             }
-
-            builder.AppendLine();
-            builder.AppendLine(string.Concat(Enumerable.Repeat("____+", allNeurons.Count()+1)));
-
-            foreach (var neuron in allNeurons)
-            {
-                builder.Append($"{neuron.Key:0000}|");
-                foreach (var neuron2 in allNeurons)
-                {
-                    var weight = GetSynapseWeight(neuron, neuron2);
-                    if (weight >= 0)
-                    {
-                        builder.Append($"{weight:0.00}|");
-                    }else
-                    {
-                        builder.Append($"{weight:0.0}|");
-                    }
-                }
-                builder.AppendLine();
-                builder.AppendLine(string.Concat(Enumerable.Repeat("____+", allNeurons.Count()+1)));
-            }
-
-            return builder.ToString();
         }
     }
 }

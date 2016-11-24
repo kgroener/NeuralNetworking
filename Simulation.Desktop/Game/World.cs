@@ -1,10 +1,12 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Collections.Generic;
+using System.Numerics;
 
 namespace Simulation.Game
 {
     public static class World
     {
-        private static Vector2[] _targets = new[]
+        private static readonly Vector2[] _targets = new[]
         {
             new Vector2(500, 0),
             new Vector2(625, 400),
@@ -18,6 +20,18 @@ namespace Simulation.Game
             new Vector2(375, 400),
             new Vector2(500, 0),
         };
+
+    static World()
+        {
+            //List<Vector2> targets = new List<Vector2>();
+            //Random r = new Random();
+            //for (int i = 0; i < 10; i++)
+            //{
+            //    targets.Add(new Vector2(r.Next(0, 1000), r.Next(0, 1000)));
+            //}
+
+            //_targets = targets.ToArray();
+        }
 
         public static Vector2[] Targets => _targets;
 

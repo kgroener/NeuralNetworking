@@ -1,4 +1,5 @@
 ﻿using Genetics.Mutating;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -24,23 +25,45 @@ namespace Genetics.Enhancing
             _poolMutator = mutator;
         }
 
+        public double Aggressiveness
+        {
+            get { return _poolMutator.Aggressiveness; }
+            set
+            {
+                _poolMutator.Aggressiveness = value;
+            }
+        }
+
         protected abstract IEnumerable<FitnessFunction<T>> FitnessFunctions { get; }
 
-        public IEnumerable<T> CreateNewGeneration(IEnumerable<T> selectionPool, int generationSize)
+        public IEnumerable<T> CreateNewGeneration(IEnumerable<T> generation, int generationSize)
         {
+            int top = Math.Max(1, (int)(Aggressiveness * generation.Count()*0.5));
+            Console.WriteLine($"Take top {top}");
+            var selectionPool = GetTopSelection(generation, top);
+
             return _poolMutator.MutatePool(selectionPool, generationSize);
         }
 
-        public IEnumerable<T> GetTopSelection(IEnumerable<T> generation, int topAmount)
+        private IEnumerable<T> GetTopSelection(IEnumerable<T> generation, int topAmount)
         {
             var orderedByFitness = generation.OrderByDescending(CalculateFitness).ToArray();
-            var best = orderedByFitness.Take(topAmount).ToArray();
-            return best;
+            return orderedByFitness.Take(topAmount).ToArray();
         }
 
-        public double CalculateFitness(T obj)
+        private double CalculateFitness(T obj)
         {
             return FitnessFunctions.Sum((f) => f(obj).Value);
+        }
+
+        public T GetBest(IEnumerable<T> generation)
+        {
+            return generation.OrderByDescending(CalculateFitness).First();
+        }
+
+        public double GetBestFitness(IEnumerable<T> generation)
+        {
+            return generation.Select(CalculateFitness).OrderByDescending(f => f).First();
         }
     }
 }

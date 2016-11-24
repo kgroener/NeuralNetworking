@@ -21,6 +21,8 @@ namespace Simulation.Desktop
         private ObservableCollection<DataPoint> resultsSpecies1;
         private ObservableCollection<DataPoint> resultsSpecies2;
         private int _requiredUpdateCount;
+        private double _maxFitness;
+        private int _plateauSize;
 
         public MainWindow()
         {
@@ -44,29 +46,58 @@ namespace Simulation.Desktop
             IEnumerable<Ship> generationSpecies1 = Enumerable.Empty<Ship>();
             IEnumerable<Ship> generationSpecies2 = Enumerable.Empty<Ship>();
 
+            _maxFitness = double.MinValue;
+
             for (int i = 0; i < 1000000; i++)
             {
-                var championsSpecies1 = enhancer.GetTopSelection(generationSpecies1, 10);
-                var championsSpecies2 = enhancer.GetTopSelection(generationSpecies2, 10);
-                generationSpecies1 = enhancer.CreateNewGeneration(championsSpecies1, 100);
-                generationSpecies2 = enhancer.CreateNewGeneration(championsSpecies2, 100);
+                var aggr = (_plateauSize / (i + 1d)) + (0.5 / (i + 1));
+                enhancer.Aggressiveness = aggr;
+                Console.WriteLine(aggr);
 
-                if (championsSpecies1.Any())
+                var currentMaxFitness = double.MinValue;
+                if (generationSpecies1.Any())
                 {
+                    var fitness = enhancer.GetBestFitness(generationSpecies1);
+                    if (fitness > currentMaxFitness)
+                    {
+                        currentMaxFitness = fitness;
+                    }
+
                     UIHelper.UISafeInvoke(() =>
                     {
-                        resultsSpecies1.Add(new DataPoint(i, enhancer.CalculateFitness(championsSpecies1.First())));
+                        resultsSpecies1.Add(new DataPoint(i, fitness));
                         _plot.InvalidatePlot();
                     });
                 }
-                if (championsSpecies2.Any())
+                if (generationSpecies2.Any())
                 {
+                    var fitness = enhancer.GetBestFitness(generationSpecies2);
+                    if (fitness > currentMaxFitness)
+                    {
+                        currentMaxFitness = fitness;
+                    }
+
                     UIHelper.UISafeInvoke(() =>
                     {
-                        resultsSpecies2.Add(new DataPoint(i, enhancer.CalculateFitness(championsSpecies2.First())));
+                        resultsSpecies2.Add(new DataPoint(i, fitness));
                         _plot.InvalidatePlot();
                     });
                 }
+
+                if (currentMaxFitness > _maxFitness)
+                {
+                    _plateauSize = 0;
+                    _maxFitness = currentMaxFitness;
+                }
+                else
+                {
+                    _plateauSize++;
+                }
+
+
+
+                generationSpecies1 = enhancer.CreateNewGeneration(generationSpecies1, 100);
+                generationSpecies2 = enhancer.CreateNewGeneration(generationSpecies2, 100);
 
                 await RunSimulationAsync(generationSpecies1, generationSpecies2);
             }
@@ -102,7 +133,7 @@ namespace Simulation.Desktop
                 if (newMaxTargetsReached > maxTargetsReached)
                 {
                     maxTargetsReached = newMaxTargetsReached;
-                    requiredUpdateCount += (300/newMaxTargetsReached);
+                    requiredUpdateCount += (300 / newMaxTargetsReached);
                     Console.WriteLine($"Required update count increased toL {requiredUpdateCount}");
                 }
             }
